@@ -1,0 +1,160 @@
+/* Contests Tab - LeetCode/Codeforces Style */
+
+.contests-container {
+    padding: 20px;
+}
+
+.contests-header {
+    margin-bottom: 24px;
+}
+
+.contests-header h2 {
+    color: var(--lc-text);
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.contests-header p {
+    color: var(--lc-text-dim);
+    font-size: 14px;
+}
+
+.contests-table {
+    border: 1px solid var(--lc-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.contests-table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.5fr 0.5fr 1fr 1fr;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--lc-panel-alt);
+    border-bottom: 1px solid var(--lc-border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--lc-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.contest-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.5fr 0.5fr 1fr 1fr;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--lc-border);
+    background: var(--lc-panel);
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.contest-row:hover {
+    background: var(--lc-panel-alt);
+}
+
+.contest-row:last-child {
+    border-bottom: none;
+}
+
+.contest-name a {
+    color: var(--lc-text);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.contest-name a:hover {
+    color: var(--lc-orange);
+}
+
+.platform-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.platform-codeforces {
+    background: #1f8acb;
+    color: white;
+}
+
+.platform-leetcode {
+    background: #ffa116;
+    color: #1a1a1a;
+}
+
+.contest-time {
+    color: var(--lc-text-dim);
+    font-size: 13px;
+}
+
+.contest-duration {
+    color: var(--lc-text);
+    font-size: 13px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-soon {
+    background: rgba(255, 161, 22, 0.15);
+    color: var(--lc-orange);
+    border: 1px solid rgba(255, 161, 22, 0.3);
+}
+
+.status-upcoming {
+    background: rgba(44, 187, 93, 0.15);
+    color: var(--lc-green);
+    border: 1px solid rgba(44, 187, 93, 0.3);
+}
+
+.register-btn {
+    padding: 6px 14px;
+    background: var(--lc-orange);
+    color: #1a1a1a;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.register-btn:hover {
+    background: var(--lc-orange-hover);
+}
+
+.contests-loading,
+.contests-error,
+.contests-empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--lc-text-dim);
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .contests-table-header,
+    .contest-row {
+        grid-template-columns: 1.5fr 1fr 1fr;
+    }
+    
+    .contests-table-header > div:nth-child(3),
+    .contests-table-header > div:nth-child(4),
+    .contests-table-header > div:nth-child(5),
+    .contest-row > div:nth-child(3),
+    .contest-row > div:nth-child(4),
+    .contest-row > div:nth-child(5) {
+        display: none;
+    }
+}
