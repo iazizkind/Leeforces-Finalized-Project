@@ -1,88 +1,21 @@
-const axios=require("axios")
-const getLanguageById = (lang) => {
-
-    const language = {
-        "c++": 73,
-        "java": 63,
-        "javascript": 64
-    };
-
-    return language[lang.toLowerCase()];
+// Language names the app uses, mapped to Judge0 CE language ids.
+// Full list: GET <JUDGE0_URL>/languages
+const LANGUAGE_IDS = {
+    "c": 50,           // C (GCC 9.2.0)
+    "c++": 54,         // C++ (GCC 9.2.0)
+    "java": 62,        // Java (OpenJDK 13.0.1)
+    "javascript": 63,  // JavaScript (Node.js 12.14.0)
+    "python": 71       // Python (3.8.1)
 };
 
-const waiting=async(timer)=>{
-    setInterval(()=>{
-        return 1;
-    },timer)
+// The editor sends "cpp", "js" and "py"; store them under one name each.
+const ALIASES = { "cpp": "c++", "js": "javascript", "py": "python", "python3": "python" };
+
+const normalizeLanguage = (lang) => {
+    const key = String(lang || "").trim().toLowerCase();
+    return ALIASES[key] || key;
 };
 
-const SubmitBatch=async (submission)=>{
-   
+const getLanguageById = (lang) => LANGUAGE_IDS[normalizeLanguage(lang)];
 
-    const options = {
-    method: 'GET',
-    url: 'https://judge0-ce.p.rapidapi.com/about',
-    headers: {
-        'x-rapidapi-key': '98e8d95bedmsh2166f50c22d16d7p14739ajsn9cfbb5274258',
-        'x-rapidapi-host': 'judge0-ce.p.rapidapi.com',
-        'Content-Type': 'application/json'
-    },
-    data:{
-        submission
-    }
-    };
-
-
-    async function fetchData() {
-        try {
-            const response = await axios.request(options);
-            return response.data;
-
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    return await fetchData();
-
-}
-
-const getResultbyToken=async(result)=>{
-
-    const options = {
-    method: 'GET',
-    url: 'https://judge0-ce.p.rapidapi.com/submissions/batch',
-    params: {
-        tokens: result.join(","),
-        base64_encoded: 'true',
-        fields: '*'
-    },
-    headers: {
-        'x-rapidapi-key': '98e8d95bedmsh2166f50c22d16d7p14739ajsn9cfbb5274258',
-        'x-rapidapi-host': 'judge0-ce.p.rapidapi.com',
-        'Content-Type': 'application/json'
-    }
-    };
-
-    async function fetchData() {
-        try {
-            const response = await axios.request(options);
-            return response.data;
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    while(true){
-        const result=await fetchData();
-
-        const isResultObtained=result.every((r)=>r.status_id>3);
-        if(isResultObtained){
-            return result.submission;
-        }
-        waiting(1000);
-    }
-}
-    
-
-module.exports = {getLanguageById,SubmitBatch,getResultbyToken};
+module.exports = { getLanguageById, normalizeLanguage, LANGUAGE_IDS };

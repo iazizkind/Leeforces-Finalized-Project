@@ -61,7 +61,7 @@ const ProblemSchema = new Schema({
         {
             language: {
                 type: String,
-                enum: ["c++", "java", "javascript"]
+                enum: ["c", "c++", "java", "javascript", "python"]
             },
             codeSolution: {
                 type: String,

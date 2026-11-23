@@ -1,7 +1,35 @@
 const express = require("express");
-const { getLanguageById, SubmitBatch, getResultbyToken } = require("../utils/problemUtils");
+const { getLanguageById, normalizeLanguage } = require("../utils/problemUtils");
 const Problem = require("../models/problem");
-const mockExecution = require("../utils/mockExecution");
+const { runTestCases } = require("../utils/judge0");
+
+// Run every reference solution against the example tests.
+// Returns an error message if one fails, or null if all pass.
+const checkReferenceSolutions = async (refrenceSolution = [], exampleTest = []) => {
+    for (const { language, codeSolution } of refrenceSolution) {
+        const languageId = getLanguageById(language);
+        if (!languageId) return `Unsupported language in reference solution: ${language}`;
+        const results = await runTestCases(exampleTest.map((testcase) => ({
+            language_id: languageId,
+            source_code: codeSolution,
+            stdin: testcase.input,
+            expected_output: testcase.output
+        })));
+        const failIndex = results.findIndex((r) => !r.passed);
+        if (failIndex !== -1) {
+            const f = results[failIndex];
+            return `Reference solution (${language}) failed example ${failIndex + 1}: ${f.verdict}` +
+                (f.error ? `\n${f.error}` : `\nExpected: ${exampleTest[failIndex].output}\nGot: ${f.stdout}`);
+        }
+    }
+    return null;
+};
+
+const normalizeSolutions = (body) => {
+    if (Array.isArray(body.refrenceSolution)) {
+        body.refrenceSolution = body.refrenceSolution.map((r) => ({ ...r, language: normalizeLanguage(r.language) }));
+    }
+};
 const streamifier = require("streamifier");
 const cloudinary = require("../config/cloudinary");
 
@@ -9,21 +37,12 @@ const createProblem = async (req, res) => {
     try {
         const { title, description, difficulty, tags, exampleTest, hiddenTest, refrenceSolution, videoUrl } = req.body;
         
-        for (const { language, codeSolution } of refrenceSolution) {
-            const languageId = getLanguageById(language);
-            const submission = exampleTest.map((testcase) => ({
-                language_id: languageId,
-                source_code: codeSolution,
-                stdin: testcase.input,
-                expected_output: testcase.output
-            }));
-            const result = await mockExecution(submission);
-            const isValid = result.every((submission) => submission.status.id === 3);
-            if (!isValid) {
-                res.status(404).send("Code Failed");
-            }
+        normalizeSolutions(req.body);
+        const failure = await checkReferenceSolutions(req.body.refrenceSolution, exampleTest);
+        if (failure) {
+            return res.status(400).send(failure);
         }
-        
+
         const userProblem = await Problem.create({
             ...req.body,
             videoUrl: videoUrl || '',
@@ -49,21 +68,12 @@ const updateProblem = async (req, res) => {
             return res.status(404).send("No Such Problem exists");
         }
         
-        for (const { language, codeSolution } of refrenceSolution) {
-            const languageId = getLanguageById(language);
-            const submission = exampleTest.map((testcase) => ({
-                language_id: languageId,
-                source_code: codeSolution,
-                stdin: testcase.input,
-                expected_output: testcase.output
-            }));
-            const result = await mockExecution(submission);
-            const isValid = result.every((submission) => submission.status.id === 3);
-            if (!isValid) {
-                return res.status(404).send("Code Failed");
-            }
+        normalizeSolutions(req.body);
+        const failure = await checkReferenceSolutions(req.body.refrenceSolution, exampleTest);
+        if (failure) {
+            return res.status(400).send(failure);
         }
-        
+
         newProblem = await Problem.findByIdAndUpdate(
             id,
             { ...req.body, videoUrl: videoUrl || '' },
@@ -150,12 +160,17 @@ const runCode = async (req, res) => {
             expected_output: testcase.output
         }));
 
-        const result = await mockExecution(submissionBatch);
+        const result = await runTestCases(submissionBatch);
 
         const testResults = fetchedProblem.exampleTest.map((testcase, index) => ({
             input: testcase.input,
             expectedOutput: testcase.output,
-            passed: result[index].status.id === 3
+            actualOutput: result[index].stdout,
+            passed: result[index].passed,
+            verdict: result[index].verdict,
+            error: result[index].error,
+            timeMs: result[index].timeMs,
+            memoryKb: result[index].memoryKb
         }));
 
         res.status(200).json({
@@ -163,7 +178,8 @@ const runCode = async (req, res) => {
             testResults
         });
     } catch (err) {
-        res.status(500).send("Error: " + err);
+        console.error("Run error:", err.response?.data || err.message);
+        res.status(503).send("The code runner is unavailable right now. Please try again in a minute.");
     }
 };
 

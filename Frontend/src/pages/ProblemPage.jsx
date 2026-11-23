@@ -111,8 +111,9 @@ function ProblemDetailPage() {
             const { allPassed, testResults } = response.data;
             const formatted = testResults
                 .map((t, i) =>
-                    `Test Case ${i + 1}: ${t.passed ? "✅ Passed" : "❌ Failed"}\n` +
-                    `Input: ${t.input}\nExpected: ${t.expectedOutput}\nActual: ${t.actualOutput || "N/A"}`
+                    `Test Case ${i + 1}: ${t.passed ? "✅ Passed" : `❌ ${t.verdict || "Failed"}`}\n` +
+                    `Input: ${t.input}\nExpected: ${t.expectedOutput}\nActual: ${t.actualOutput || "N/A"}` +
+                    (t.error ? `\nError:\n${t.error}` : "")
                 )
                 .join("\n\n");
             
@@ -136,12 +137,13 @@ function ProblemDetailPage() {
                 language
             });
             
-            const { status, testCasesPassed, totalTestCases, runtime, memory } = response.data;
+            const { status, testCasesPassed, totalTestCases, runtime, memory, errorMessege } = response.data;
             setOutput(
                 `Status: ${status}\n` +
                 `Test Cases Passed: ${testCasesPassed}/${totalTestCases}\n` +
-                `Runtime: ${runtime || "N/A"}ms\n` +
-                `Memory: ${memory || "N/A"}KB`
+                `Runtime: ${runtime ?? "N/A"}ms\n` +
+                `Memory: ${memory ?? "N/A"}KB` +
+                (errorMessege ? `\n\nError:\n${errorMessege}` : "")
             );
             
             if (status === "Accepted") {
