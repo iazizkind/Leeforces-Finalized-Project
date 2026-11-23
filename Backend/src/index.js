@@ -5,8 +5,14 @@ const cookieParser = require("cookie-parser");
 const cors = require('cors');
 
 // CORS configuration - MUST BE BEFORE ROUTES
+// Allowed frontend URLs: local dev plus any listed in CLIENT_URL (comma-separated)
+const allowedOrigins = ['http://localhost:5173',
+    ...(process.env.CLIENT_URL || '').split(',').map(u => u.trim().replace(/\/$/, '')).filter(Boolean)];
+
+app.set('trust proxy', 1); // Render sits behind a proxy
+
 app.use(cors({
-    origin: 'http://localhost:5173',  // Your frontend URL
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -50,7 +56,7 @@ const InitializeConnection = async () => {
     try {
         await Promise.all([main(), redisClient.connect()]);
         console.log("Connected To DB");
-        app.listen(process.env.PORT, () => {
+        app.listen(process.env.PORT || 3000, () => {
             console.log(`The App is listening to port number ${process.env.PORT}`)
         })
     }

@@ -6,6 +6,21 @@ const jwt = require("jsonwebtoken");
 const redisClient = require("../config/redis");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+
+// multer does not create the folder itself when destination is a function
+fs.mkdirSync("uploads", { recursive: true });
+
+// Cross-site cookie settings: the frontend (Vercel) and backend (Render) are on
+// different domains in production, so the cookie must be SameSite=None + Secure.
+const isProduction = process.env.NODE_ENV === 'production';
+const cookieOptions = {
+    maxAge: 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: isProduction ? 'none' : 'lax',
+    secure: isProduction
+};
+
 require("dotenv").config();
 
 // Configure multer for file uploads
@@ -63,7 +78,7 @@ const register = async (req, res) => {
             skills: reqUser.skills || []
         };
 
-        res.cookie('token', token, { maxAge: 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+        res.cookie('token', token, cookieOptions);
         res.status(201).json({
             user: reply,
             message: "User Created Successfully"
@@ -114,12 +129,7 @@ const login = async (req, res) => {
             age: reqUser.age || ''
         };
 
-        res.cookie('token', token, {
-            maxAge: 60 * 60 * 1000,
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: false
-        });
+        res.cookie('token', token, cookieOptions);
 
         res.status(201).json({
             user: reply,
@@ -142,7 +152,7 @@ const logout = async (req, res) => {
             const ttl = payload.exp - Math.floor(Date.now() / 1000);
             if (ttl > 0) await redisClient.expire(`token:${token}`, ttl);
         }
-        res.clearCookie('token');
+        res.clearCookie('token', { httpOnly: true, sameSite: cookieOptions.sameSite, secure: cookieOptions.secure });
         res.send("User Logged Out Successfully");
     } catch (err) {
         console.log("Logout error:", err);
@@ -180,7 +190,7 @@ const adminRegister = async (req, res) => {
             skills: reqUser.skills || []
         };
 
-        res.cookie('token', token, { maxAge: 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+        res.cookie('token', token, cookieOptions);
         res.status(201).json({
             user: reply,
             message: "Admin created Successfully"
